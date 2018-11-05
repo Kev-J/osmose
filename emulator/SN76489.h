@@ -42,6 +42,8 @@ using namespace std;
 #define WHITE_NOISE_FEEDBACK 0xF037
 #define PERIODIC_NOISE_FEEDBACK 0x8000
 
+class Vvdp315_5124;
+
 /* #define PSG_DEBUG */
 /* Hardware clock. */
 enum
@@ -70,7 +72,7 @@ class SN76489 : public ImplementsSaveState
     public:
 
         // Constructor.
-        SN76489(u32 chip_frequency, u32 samplingRate);
+        SN76489(u32 chip_frequency, u32 samplingRate, Vvdp315_5124* vdp);
 
         // Destructor.
         ~SN76489()
@@ -118,6 +120,7 @@ class SN76489 : public ImplementsSaveState
         u32 period_counter_[4];
         u16 channel_output_[4];
         u32 update_step_;
+		u32 vdpCycles_;
         s16 last_sample_;
         bool  whiteNoise_;     // WhiteNoise/Periodic mode flag.
         u16 LFSR_;
@@ -126,5 +129,6 @@ class SN76489 : public ImplementsSaveState
 
         // Internal utility method to compute parity.
         u8   parity(u16 v);
+		Vvdp315_5124* vdp_;
 };
 #endif

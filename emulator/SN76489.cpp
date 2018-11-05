@@ -32,6 +32,9 @@
 
 #include "SN76489.h"
 #include "Bits.h"
+#include <verilated.h>
+
+#include "Vvdp315_5124.h"
 //#include <stdio.h>
 
 /* Values ripped from MEKA. They've been controlled against a real SMS.*/
@@ -41,13 +44,16 @@ const u16 SN76489::volume_table[16] = {892*5, 892*5, 892*5, 760*5, 623*5, 497*5,
 /*--------------------------------------------------------------*/
 /* Constructor.                                                 */
 /*--------------------------------------------------------------*/
-SN76489::SN76489(u32 chip_frequency, u32 samplingRate)
+SN76489::SN76489(u32 chip_frequency, u32 samplingRate, Vvdp315_5124* vdp)
+: vdp_(vdp)
 {
+	/* TODO call vdp->final in upper module */
     if (chip_frequency > sn76489_max_clock) chip_frequency = sn76489_max_clock;
     if (chip_frequency < sn76489_min_clock) chip_frequency = sn76489_min_clock;
     chip_frequency_ = chip_frequency;
     clock_ = chip_frequency_ >> 4;
     update_step_ = (clock_ << 10) / samplingRate;
+	vdpCycles_ = chip_frequency/samplingRate;
     Fifo_ = new FIFOSoundBuffer( 4096 );
     reset();
 }
@@ -164,6 +170,23 @@ void SN76489::reset()
         channel_output_[i] = 1;
         period_counter_[i] = 0;
     }
+
+	if (vdp_)
+	{
+		/* VDP reset */
+		vdp_->nRESET = 0;
+		vdp_->CPUCLK = 0;
+		vdp_->eval();
+		vdp_->CPUCLK = 1;
+		vdp_->eval();
+
+		vdp_->nRESET = 1;
+		vdp_->CPUCLK = 0;
+		vdp_->eval();
+		vdp_->CPUCLK = 1;
+		vdp_->eval();
+	}
+
     Fifo_->reset();
 }
 
@@ -199,55 +222,77 @@ bool SN76489::run(u32 cycles)
     {
         s16 snd = 0;
 
-        // Compute half periods for all channels.
-        for (u32 channel = 0; channel < 4; channel++)
-        {
-            half_period_[channel] = freqDiv_[channel] << 10;
-            if (period_counter_[channel] >= half_period_[channel])
-            {
-                period_counter_[channel] = 0;
-            }
-        }
+		if (vdp_)
+		{
+			/* Compute and store first sample */
+			vdp_->CPUCLK = 0;
+			vdp_->eval();
+			vdp_->CPUCLK = 1;
+			vdp_->eval();
 
-        // Generate output for 3 channels (0 or 1)
-        for (u32 channel = 0; channel < 3; channel++)
-        {
-            period_counter_[channel] += update_step_;
-            if (period_counter_[channel] >= half_period_[channel])
-            {
-                period_counter_[channel] -= half_period_[channel];
-                channel_output_[channel] ^= 1;
-            }
-        }
+			snd = (s16)(((s8)vdp_->AUDIO_OUT) * 256);
 
-        // Generate output for Noise generator.
-        period_counter_[3] += update_step_;
-        if (period_counter_[3] >= half_period_[3])
-        {
-            period_counter_[3] -= half_period_[3];
-            LFSR_=(LFSR_>>1) | ((whiteNoise_ ? parity(LFSR_ & 0x9):LFSR_ & 1)<<15);
-            channel_output_[3] =(LFSR_ & 1);
-        }
+			/* Compute next samples */
+			for (u32 i = 1 ; i < vdpCycles_; i++)
+			{
+				vdp_->CPUCLK = 0;
+				vdp_->eval();
+				vdp_->CPUCLK = 1;
+				vdp_->eval();
+			}
+		}
+		else
+		{
+        	// Compute half periods for all channels.
+        	for (u32 channel = 0; channel < 4; channel++)
+        	{
+        	    half_period_[channel] = freqDiv_[channel] << 10;
+        	    if (period_counter_[channel] >= half_period_[channel])
+        	    {
+        	        period_counter_[channel] = 0;
+        	    }
+        	}
 
-        // Now, generate samples for channels A, B and C.
-        for (u32 channel = 0; channel < 3; channel++)
-        {
-            s16 polarity;
+        	// Generate output for 3 channels (0 or 1)
+        	for (u32 channel = 0; channel < 3; channel++)
+        	{
+        	    period_counter_[channel] += update_step_;
+        	    if (period_counter_[channel] >= half_period_[channel])
+        	    {
+        	        period_counter_[channel] -= half_period_[channel];
+        	        channel_output_[channel] ^= 1;
+        	    }
+        	}
 
-            // If freqdiv is 0 or 1 the channel output is always 1
-            if (freqDiv_[channel] <= 1) channel_output_[channel] = 1;
+        	// Generate output for Noise generator.
+        	period_counter_[3] += update_step_;
+        	if (period_counter_[3] >= half_period_[3])
+        	{
+        	    period_counter_[3] -= half_period_[3];
+        	    LFSR_=(LFSR_>>1) | ((whiteNoise_ ? parity(LFSR_ & 0x9):LFSR_ & 1)<<15);
+        	    channel_output_[3] =(LFSR_ & 1);
+        	}
 
-            if (channel_output_[channel]) polarity = 1;
-            else polarity = -1;
+        	// Now, generate samples for channels A, B and C.
+        	for (u32 channel = 0; channel < 3; channel++)
+        	{
+        	    s16 polarity;
 
-            snd += polarity * volume_table[volume_[channel]];
-        }
+        	    // If freqdiv is 0 or 1 the channel output is always 1
+        	    if (freqDiv_[channel] <= 1) channel_output_[channel] = 1;
 
-        // Now, generate samples for Noise generator.
-        if (channel_output_[3] == 1)
-        {
-            snd += volume_table[volume_[3]];
-        }
+        	    if (channel_output_[channel]) polarity = 1;
+        	    else polarity = -1;
+
+        	    snd += polarity * volume_table[volume_[channel]];
+        	}
+
+        	// Now, generate samples for Noise generator.
+        	if (channel_output_[3] == 1)
+        	{
+        	    snd += volume_table[volume_[3]];
+        	}
+		}
 
         if (!Fifo_->write ( snd )) return false; // Prevent saturation
         last_sample_ = snd;

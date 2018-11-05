@@ -34,8 +34,11 @@
 #include <QTextStream>
 #include "OsmoseGUI.h"
 
+#include <verilated.h>
+
 int main(int argc, char *argv[])
 {
+	Verilated::commandArgs(argc, argv);
     QApplication app(argc, argv);
     OsmoseGUI window;
     window.resize(512, 384 + MENU_HEIGHT);

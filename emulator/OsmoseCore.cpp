@@ -32,6 +32,7 @@
  */
 
 #include "OsmoseCore.h"
+#include "Vvdp315_5124.h"
 
 
 SN76489 *p;
@@ -65,7 +66,8 @@ OsmoseCore::OsmoseCore(const char *rom_f,  unsigned int *output, OsmoseConfigura
     env  = new SmsEnvironment();
     cpu  = new Z80(*env);
 
-    p    = new SN76489(3579545, 22050);
+	vdp = new Vvdp315_5124;
+    p    = new SN76489(3579545, 22050, vdp);
 
     if (opt.MachineType == SMS)
     {
@@ -139,6 +141,7 @@ OsmoseCore::~OsmoseCore()
     delete env;
     delete iom;
     delete cpu;
+	delete vdp;
 }
 
 /*--------------------------------------------------------------------*/

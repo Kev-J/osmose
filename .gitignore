@@ -4,3 +4,4 @@ ui_Configuration.h
 ui_LogWindow.h
 osmose
 Makefile
+obj_dir

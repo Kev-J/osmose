@@ -61,6 +61,7 @@
 
 using namespace std;
 
+class Vvdp315_5124;
 
 
 /* Use save state slot from 1 to 5. */
@@ -117,6 +118,7 @@ class OsmoseCore : public DebugEventThrower
         Z80                 *cpu;        // Our Z80 core.
         WaveWriter          *wavW;       // Sound ripper.
         float               gain;        // gain level.
+		Vvdp315_5124 *vdp;
 
 #ifdef BUILT_IN_DEBUGGER
         unsigned int   old_cycles;       // Used for cycle count.

@@ -4,9 +4,33 @@ TARGET = osmose
 TEMPLATE = app
 
 DEPENDPATH += . cpu emulator
-INCLUDEPATH += . cpu emulator
+INCLUDEPATH += . cpu emulator /usr/share/verilator/include obj_dir
 
-LIBS += -lz -lasound
+
+LIBS += -lz -lasound -Lobj_dir -l:Vvdp315_5124__ALL.a
+
+# verilator
+VERILOG_VDP315_5124_SOURCES += emulator/verilog/315-5124/sn76489_cpu_interface.v \
+				   emulator/verilog/315-5124/sn76489_tone_generator.v \
+				   emulator/verilog/315-5124/sn76489_volume_lut.v \
+				   emulator/verilog/315-5124/sn76489.v \
+				   emulator/verilog/315-5124/vdp315_5124.v
+VERILOG_VDP315_5124_TOP_MODULE = vdp315_5124
+
+# TODO
+verilator_vdp315_5124.target = obj_dir/Vvdp315_5124.mk
+verilator_vdp315_5124.commands = verilator -Wall -cc $$VERILOG_VDP315_5124_SOURCES --top-module $$VERILOG_VDP315_5124_TOP_MODULE
+
+verilator_vdp315_5124_archive.target = obj_dir/Vvdp315_5124__ALL.a
+verilator_vdp315_5124_archive.commands = make -C obj_dir -f Vvdp315_5124.mk
+verilator_vdp315_5124_archive.depends = $$verilator_vdp315_5124.target
+
+QMAKE_EXTRA_TARGETS += verilator_vdp315_5124 verilator_vdp315_5124_archive
+PRE_TARGETDEPS += $$verilator_vdp315_5124_archive.target
+
+extraclean.commands = rm -rf obj_dir
+clean.depends = extraclean
+QMAKE_EXTRA_TARGETS += clean extraclean
 
 system-minizip {
     LIBS += -lminizip
@@ -96,7 +120,8 @@ SOURCES += EmulationThread.cpp \
            emulator/SoundThread.cpp \
            emulator/VDP.cpp \
            emulator/VDP_GG.cpp \
-           emulator/WaveWriter.cpp
+           emulator/WaveWriter.cpp \
+		   /usr/share/verilator/include/verilated.cpp
 
 FORMS += Configuration.ui LogWindow.ui
 
