@@ -7,7 +7,6 @@ module sn76489_tone_generator(
 	output signed [15:0] out);
 
 	reg [9:0] cpt;
-	reg enDiv2;
 	reg state;
 
 	/*

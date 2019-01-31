@@ -9,7 +9,7 @@ module sn76489(
 
 	reg [9:0] freq1, freq2, freq3, freqNoise;
 	reg [3:0] att1, att2, att3, attNoise;
-	reg noiseFeedback;
+	reg noiseFeedbackType;
 	reg [1:0] noiseFeed;
 	reg [3:0] clockDiv;
 	reg clockEna;
@@ -44,11 +44,10 @@ module sn76489(
 									 .att2(att2),
 									 .att3(att3),
 									 .attNoise(attNoise),
-									 .noiseFeedback(noiseFeedback),
+									 .noiseFeedbackType(noiseFeedbackType),
 									 .noiseFeed(noiseFeed));
 
 	reg [15:0] tone1Out, tone2Out, tone3Out, noise1Out;
-	reg [18:0] tmpOut;
 
 	sn76489_tone_generator tone1(.reset(reset),
 							   .clk(clock),
@@ -91,13 +90,12 @@ module sn76489(
 								   .clk(clock),
 								   .enable(clockEna),
 								   .n(freqNoise),
-								   .noiseFeedback(noiseFeedback),
+								   .noiseFeedbackType(noiseFeedbackType),
 								   .att(attNoise),
 								   .out(noise1Out));
 
 	/* Output sum */
-	assign tmpOut = {3'b000, tone1Out} + {3'b000, tone2Out} + {3'b000, tone3Out};
-	assign aOut = tmpOut[18:3];
+	assign aOut = tone1Out + tone2Out + tone3Out + noise1Out;
 
 	/* TODO */
 	/*

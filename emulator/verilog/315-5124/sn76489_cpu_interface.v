@@ -12,7 +12,7 @@ module sn76489_cpu_interface(
 	output reg [3:0] att2,
 	output reg [3:0] att3,
 	output reg [3:0] attNoise,
-	output reg noiseFeedback,
+	output reg noiseFeedbackType,
 	output reg [1:0] noiseFeed
 	);
 
@@ -84,7 +84,7 @@ module sn76489_cpu_interface(
 				if (cpt < 6'd31)
 					cpt <= cpt + 1'b1;
 
-				if (cpt == 6'd30) begin
+				if ((cpt == 6'd30) && (dataTmp[0] == 1'b1)) begin
 					if (needSecondWrite) begin
 						needSecondWrite <= 1'b0;
 
@@ -117,7 +117,7 @@ module sn76489_cpu_interface(
 							NOISE_CONTROL_REG: begin
 								needSecondWrite <= 1'b0;
 								noiseFeed <= d[7:6];
-								noiseFeedback <= d[5];
+								noiseFeedbackType <= d[5];
 							end
 							NOIS_ATT_REG: begin
 								needSecondWrite <= 1'b0;

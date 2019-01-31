@@ -11,6 +11,7 @@ LIBS += -lz -lasound -Lobj_dir -l:Vvdp315_5124__ALL.a
 
 # verilator
 VERILOG_VDP315_5124_SOURCES += emulator/verilog/315-5124/sn76489_cpu_interface.v \
+				   emulator/verilog/315-5124/sn76489_noise_generator.v \
 				   emulator/verilog/315-5124/sn76489_tone_generator.v \
 				   emulator/verilog/315-5124/sn76489_volume_lut.v \
 				   emulator/verilog/315-5124/sn76489.v \

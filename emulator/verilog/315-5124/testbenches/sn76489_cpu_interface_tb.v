@@ -13,7 +13,7 @@ module sn76489_cpu_interface_tb();
 	wire [3:0] att2;
 	wire [3:0] att3;
 	wire [3:0] attNoise;
-	wire noiseFeedback;
+	wire noiseFeedbackType;
 	wire [1:0] noiseFeed;
 
 	sn76489_cpu_interface cpuInterface(
@@ -30,7 +30,7 @@ module sn76489_cpu_interface_tb();
 		.att2(att2),
 		.att3(att3),
 		.attNoise(attNoise),
-		.noiseFeedback(noiseFeedback),
+		.noiseFeedbackType(noiseFeedbackType),
 		.noiseFeed(noiseFeed));
 
 	task do_clock;
@@ -108,7 +108,7 @@ module sn76489_cpu_interface_tb();
 	parameter [3:0] attNoiseConst = 4'hE;
 
 	parameter [1:0] noiseFeedConst = 2'b01;
-	parameter noiseFeedbackConst = 1'b1;
+	parameter noiseFeedbackTypeConst = 1'b1;
 
 	initial begin
 		$dumpfile("sn76489_cpu_interface_tb.vcd");
@@ -176,10 +176,10 @@ module sn76489_cpu_interface_tb();
 		end
 
 		/* Test noise control */
-		do_write({noiseFeedConst, noiseFeedbackConst, 1'b0, noiseControlReg, 1'b1});
+		do_write({noiseFeedConst, noiseFeedbackTypeConst, 1'b0, noiseControlReg, 1'b1});
 
-		if (noiseFeedback != noiseFeedbackConst) begin
-			$display("ERROR(%4d): noiseFeedback is %d instead of %d", $time, noiseFeedback, noiseFeedbackConst);
+		if (noiseFeedbackType != noiseFeedbackTypeConst) begin
+			$display("ERROR(%4d): noiseFeedbackType is %d instead of %d", $time, noiseFeedbackType, noiseFeedbackTypeConst);
 			$finish;
 		end
 

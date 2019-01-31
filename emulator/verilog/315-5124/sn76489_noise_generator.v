@@ -16,7 +16,7 @@ module sn76489_noise_generator(
 	always@(posedge clk)
 	begin
 		if (reset) begin
-			cpt <= 9'd0;
+			cpt <= 10'd0;
 			lfsr <= 16'h8000;
 		end
 		else begin
@@ -24,7 +24,7 @@ module sn76489_noise_generator(
 				if (cpt < n - 1'b1)
 					cpt <= cpt + 1'b1;
 				else begin
-					cpt <= 9'd0;
+					cpt <= 10'd0;
 
 					if (noiseFeedbackType == NOISE_FEEDBACK_TYPE_PERIODIC)
 						lfsr <= {lfsr[0], lfsr[15:1]};

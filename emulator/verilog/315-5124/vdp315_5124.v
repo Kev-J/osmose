@@ -34,7 +34,7 @@ module vdp315_5124 (
 	input CPUCLK,
 	input N_L,
 	input PAL_nNTSC,
-	output [7:0] AUDIO_OUT); /* Is normally one wire analog out */
+	output [15:0] AUDIO_OUT); /* Is normally one wire analog out */
 
 	/* TODO */
 	assign nNMI_OUT = 1'b0;
